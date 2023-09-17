@@ -5,15 +5,19 @@ import FormInputField from "@/components/form/FormInputField";
 import MarkdownEditor from "@/components/form/MarkdownEditor";
 import { generateSlug } from "@/utils/utils";
 import LoadingButton from "@/components/LoadingButton";
+import { useRouter } from "next/router";
 
 interface CreatePostFormData {
   slug: string;
   title: string;
   summary: string;
   body: string;
+  featuredImage: FileList;
 }
 
 export default function CreateBlogPostPage() {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -23,10 +27,22 @@ export default function CreateBlogPostPage() {
     formState: { errors, isSubmitting },
   } = useForm<CreatePostFormData>();
 
-  async function onSubmit(input: CreatePostFormData) {
+  async function onSubmit({
+    title,
+    slug,
+    summary,
+    featuredImage,
+    body,
+  }: CreatePostFormData) {
     try {
-      await BlogApi.createBlogPost(input);
-      alert("Post created successfully");
+      await BlogApi.createBlogPost({
+        title,
+        slug,
+        summary,
+        featuredImage: featuredImage[0],
+        body,
+      });
+      await router.push("/blog/" + slug);
     } catch (error) {
       console.error(error);
       alert(error);
@@ -65,6 +81,13 @@ export default function CreateBlogPostPage() {
           maxLength={300}
           as="textarea"
           error={errors.summary}
+        />
+        <FormInputField
+          label="POst image"
+          register={register("featuredImage", { required: "Required" })}
+          type="file"
+          accept="image/png, image/jpeg, image/jpg"
+          error={errors.featuredImage}
         />
         <MarkdownEditor
           label="Post body"
