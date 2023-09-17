@@ -2,6 +2,23 @@ import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import UserModel from "../models/user";
 import bcrypt from "bcrypt";
+import assertIsDefined from "../utils/assertIsDefined";
+
+export const getAuthenticatedUser: RequestHandler = async (req, res, next) => {
+  const authenticatedUser = req.user;
+
+  try {
+    assertIsDefined(authenticatedUser);
+
+    const user = await UserModel.findById(authenticatedUser._id)
+      .select("+email")
+      .exec();
+
+    res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
 
 interface SignUpBody {
   username: string;
@@ -39,11 +56,18 @@ export const signUp: RequestHandler<
 
     delete newUser.password;
 
-    req.login(newUser, (error) => {
+    req.logIn(newUser, (error) => {
       if (error) throw error;
       res.status(201).json(newUser);
     });
   } catch (error) {
     next(error);
   }
+};
+
+export const logOut: RequestHandler = (req, res) => {
+  req.logOut((error) => {
+    if (error) throw error;
+    res.sendStatus(200);
+  });
 };

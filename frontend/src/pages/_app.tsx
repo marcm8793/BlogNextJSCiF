@@ -1,13 +1,14 @@
+import Footer from "@/components/Footer";
+import NavBar from "@/components/NavBar";
+import useAuthenticateduser from "@/hooks/useAuthenticatedUser";
+import styles from "@/styles/App.module.css";
 import "@/styles/globals.scss";
 import "@/styles/utils.css";
 import type { AppProps } from "next/app";
 import { Inter } from "next/font/google";
 import Head from "next/head";
-import { Container, SSRProvider } from "react-bootstrap";
-import styles from "@/styles/App.module.css";
-import NavBar from "@/components/NavBar";
-import Footer from "@/components/Footer";
 import NextNPProgress from "nextjs-progressbar";
+import { Container, SSRProvider } from "react-bootstrap";
 
 const inter = Inter({ subsets: ["latin"] });
 
