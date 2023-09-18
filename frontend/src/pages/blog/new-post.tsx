@@ -6,14 +6,23 @@ import MarkdownEditor from "@/components/form/MarkdownEditor";
 import { generateSlug } from "@/utils/utils";
 import LoadingButton from "@/components/LoadingButton";
 import { useRouter } from "next/router";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import {
+  requiredFileSchema,
+  requiredStringSchema,
+  slugSchema,
+} from "@/utils/validation";
 
-interface CreatePostFormData {
-  slug: string;
-  title: string;
-  summary: string;
-  body: string;
-  featuredImage: FileList;
-}
+const validationSchema = yup.object({
+  slug: slugSchema.required("Required"),
+  title: requiredStringSchema,
+  summary: requiredStringSchema,
+  body: requiredStringSchema,
+  featuredImage: requiredFileSchema,
+});
+
+type CreatePostFormData = yup.InferType<typeof validationSchema>;
 
 export default function CreateBlogPostPage() {
   const router = useRouter();
@@ -25,7 +34,9 @@ export default function CreateBlogPostPage() {
     getValues,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<CreatePostFormData>();
+  } = useForm<CreatePostFormData>({
+    resolver: yupResolver(validationSchema),
+  });
 
   async function onSubmit({
     title,
@@ -61,7 +72,7 @@ export default function CreateBlogPostPage() {
       <Form onSubmit={handleSubmit(onSubmit)}>
         <FormInputField
           label="Post title"
-          register={register("title", { required: "Required" })}
+          register={register("title")}
           placeholder="Post title"
           maxLength={100}
           error={errors.title}
@@ -69,29 +80,29 @@ export default function CreateBlogPostPage() {
         />
         <FormInputField
           label="Post slug"
-          register={register("slug", { required: "Required" })}
+          register={register("slug")}
           placeholder="Post slug"
           maxLength={100}
           error={errors.slug}
         />
         <FormInputField
           label="Post summary"
-          register={register("summary", { required: "Required" })}
+          register={register("summary")}
           placeholder="Post summary"
           maxLength={300}
           as="textarea"
           error={errors.summary}
         />
         <FormInputField
-          label="POst image"
-          register={register("featuredImage", { required: "Required" })}
+          label="Post image"
+          register={register("featuredImage")}
           type="file"
-          accept="image/png, image/jpeg, image/jpg"
+          accept="image/png,image/jpeg"
           error={errors.featuredImage}
         />
         <MarkdownEditor
           label="Post body"
-          register={register("body", { required: "Required" })}
+          register={register("body")}
           watch={watch}
           setValue={setValue}
           error={errors.body}

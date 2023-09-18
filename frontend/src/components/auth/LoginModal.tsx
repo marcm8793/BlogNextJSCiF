@@ -1,98 +1,116 @@
+import { Button, Form } from "react-bootstrap";
 import { useForm } from "react-hook-form";
-import * as UsersApi from "@/network/api/users";
-import { Alert, Button, Form, Modal } from "react-bootstrap";
-import FormInputField from "../form/FormInputField";
-import PasswordInputField from "../form/PasswordInputField";
-import LoadingButton from "../LoadingButton";
-import { useState } from "react";
-import { UnauthorizedError } from "@/network/http-error";
-import useAuthenticatedUser from "@/hooks/useAuthenticatedUser";
+import * as BlogApi from "@/network/api/blog";
+import FormInputField from "@/components/form/FormInputField";
+import MarkdownEditor from "@/components/form/MarkdownEditor";
+import { generateSlug } from "@/utils/utils";
+import LoadingButton from "@/components/LoadingButton";
+import { useRouter } from "next/router";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import {
+  requiredFileSchema,
+  requiredStringSchema,
+  slugSchema,
+} from "@/utils/validation";
 
-interface LoginFormData {
-  username: string;
-  password: string;
-}
+const validationSchema = yup.object({
+  slug: slugSchema.required("Required"),
+  title: requiredStringSchema,
+  summary: requiredStringSchema,
+  body: requiredStringSchema,
+  featuredImage: requiredFileSchema,
+});
 
-interface LoginModalProps {
-  onDismiss: () => void;
-  onSignUpInsteadClicked: () => void;
-  onForgotPasswordClicked: () => void;
-}
+type CreatePostFormData = yup.InferType<typeof validationSchema>;
 
-export default function LoginModal({
-  onDismiss,
-  onSignUpInsteadClicked,
-  onForgotPasswordClicked,
-}: LoginModalProps) {
-  const { mutateUser } = useAuthenticatedUser();
-
-  const [errorText, setErrorText] = useState<string | null>(null);
+export default function CreateBlogPostPage() {
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>();
+  } = useForm<CreatePostFormData>({
+    resolver: yupResolver(validationSchema),
+  });
 
-  async function onSubmit(credentials: LoginFormData) {
+  async function onSubmit({
+    title,
+    slug,
+    summary,
+    featuredImage,
+    body,
+  }: CreatePostFormData) {
     try {
-      setErrorText(null);
-      const user = await UsersApi.login(credentials);
-      mutateUser(user);
-      onDismiss();
+      await BlogApi.createBlogPost({
+        title,
+        slug,
+        summary,
+        featuredImage: featuredImage[0],
+        body,
+      });
+      await router.push("/blog/" + slug);
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        setErrorText("Invalid credentials");
-      } else {
-        console.error(error);
-        alert(error);
-      }
+      console.error(error);
+      alert(error);
     }
   }
 
-  return (
-    <Modal show onHide={onDismiss} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Log In</Modal.Title>
-      </Modal.Header>
+  function generateSlugFromTitle() {
+    if (getValues("slug")) return;
+    const slug = generateSlug(getValues("title"));
+    setValue("slug", slug, { shouldValidate: true });
+  }
 
-      <Modal.Body>
-        {errorText && <Alert variant="danger">{errorText}</Alert>}
-        <Form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <FormInputField
-            register={register("username")}
-            label="Username"
-            placeholder="Username"
-            error={errors.username}
-          />
-          <PasswordInputField
-            register={register("password")}
-            label="Password"
-            placeholder="Password"
-            error={errors.password}
-          />
-          <Button
-            variant="link"
-            className="d-block ms-auto mt-n3 mb-3 small"
-            onClick={onForgotPasswordClicked}
-          >
-            Forgot password?
-          </Button>
-          <LoadingButton
-            type="submit"
-            isLoading={isSubmitting}
-            className="w-100"
-          >
-            Log In
-          </LoadingButton>
-        </Form>
-        <div className="d-flex align-items-center gap-1 justify-content-center mt-1">
-          Don&apos;t have an account yet?
-          <Button variant="link" onClick={onSignUpInsteadClicked}>
-            Sign Up
-          </Button>
-        </div>
-      </Modal.Body>
-    </Modal>
+  return (
+    <div>
+      <h1>Create a post</h1>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <FormInputField
+          label="Post title"
+          register={register("title")}
+          placeholder="Post title"
+          maxLength={100}
+          error={errors.title}
+          onBlur={generateSlugFromTitle}
+        />
+        <FormInputField
+          label="Post slug"
+          register={register("slug")}
+          placeholder="Post slug"
+          maxLength={100}
+          error={errors.slug}
+        />
+        <FormInputField
+          label="Post summary"
+          register={register("summary")}
+          placeholder="Post summary"
+          maxLength={300}
+          as="textarea"
+          error={errors.summary}
+        />
+        <FormInputField
+          label="Post image"
+          register={register("featuredImage")}
+          type="file"
+          accept="image/png,image/jpeg"
+          error={errors.featuredImage}
+        />
+        <MarkdownEditor
+          label="Post body"
+          register={register("body")}
+          watch={watch}
+          setValue={setValue}
+          error={errors.body}
+        />
+        <LoadingButton type="submit" isLoading={isSubmitting}>
+          Create post
+        </LoadingButton>
+      </Form>
+    </div>
   );
 }

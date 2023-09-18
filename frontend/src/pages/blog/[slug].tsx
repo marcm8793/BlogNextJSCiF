@@ -6,6 +6,7 @@ import styles from "@/styles/BlogPostPage.module.css";
 import Link from "next/link";
 import { formatDate } from "@/utils/utils";
 import Image from "next/image";
+import { NotFoundError } from "@/network/http-error";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const slugs = await BlogApi.getAllBlogPostSlugs();
@@ -21,11 +22,19 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps<BlogPostPageProps> = async ({
   params,
 }) => {
-  const slug = params?.slug?.toString();
-  if (!slug) throw Error("slug missing");
+  try {
+    const slug = params?.slug?.toString();
+    if (!slug) throw Error("slug missing");
 
-  const post = await BlogApi.getBlogPostBySlug(slug);
-  return { props: { post } };
+    const post = await BlogApi.getBlogPostBySlug(slug);
+    return { props: { post } };
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return { notFound: true };
+    } else {
+      throw error;
+    }
+  }
 };
 
 interface BlogPostPageProps {
@@ -56,7 +65,7 @@ export default function BlogPostPage({
   return (
     <>
       <Head>
-        <title>{`${title} - Blog`}</title>
+        <title>{`${title} - Flow Blog`}</title>
         <meta name="description" content={summary} />
       </Head>
 
