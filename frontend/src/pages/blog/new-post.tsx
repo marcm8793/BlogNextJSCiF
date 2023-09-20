@@ -1,4 +1,4 @@
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, Spinner } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 import * as BlogApi from "@/network/api/blog";
 import FormInputField from "@/components/form/FormInputField";
@@ -13,6 +13,8 @@ import {
   requiredStringSchema,
   slugSchema,
 } from "@/utils/validation";
+import useAuthenticatedUser from "@/hooks/useAuthenticatedUser";
+import useUnsavedChangesWarning from "@/hooks/useUnsavedChangesWarning";
 
 const validationSchema = yup.object({
   slug: slugSchema.required("Required"),
@@ -25,6 +27,7 @@ const validationSchema = yup.object({
 type CreatePostFormData = yup.InferType<typeof validationSchema>;
 
 export default function CreateBlogPostPage() {
+  const { user, userLoading } = useAuthenticatedUser();
   const router = useRouter();
 
   const {
@@ -33,7 +36,7 @@ export default function CreateBlogPostPage() {
     setValue,
     getValues,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CreatePostFormData>({
     resolver: yupResolver(validationSchema),
   });
@@ -64,6 +67,14 @@ export default function CreateBlogPostPage() {
     if (getValues("slug")) return;
     const slug = generateSlug(getValues("title"));
     setValue("slug", slug, { shouldValidate: true });
+  }
+
+  useUnsavedChangesWarning(isDirty && !isSubmitting);
+
+  if (!userLoading && !user) router.push("/");
+
+  if (userLoading) {
+    return <Spinner animation="border" className="d-block m-auto" />;
   }
 
   return (

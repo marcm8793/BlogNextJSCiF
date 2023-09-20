@@ -1,13 +1,15 @@
-import { BlogPost } from "@/models/blog-post";
+import { BlogPost, BlogPostsPage } from "@/models/blog-post";
 import api from "@/network/axiosInstance";
 
-export async function getBlogPosts() {
-  const response = await api.get<BlogPost[]>("/posts");
+export async function getBlogPosts(page: number = 1) {
+  const response = await api.get<BlogPostsPage>("/posts?page=" + page);
   return response.data;
 }
 
-export async function getBlogPostsByUser(userId: string) {
-  const response = await api.get<BlogPost[]>(`/posts?authorId=${userId}`);
+export async function getBlogPostsByUser(userId: string, page: number = 1) {
+  const response = await api.get<BlogPostsPage>(
+    `/posts?authorId=${userId}&page=${page}`
+  );
   return response.data;
 }
 
@@ -37,4 +39,27 @@ export async function createBlogPost(input: CreateBlogPostValues) {
 
   const response = await api.post<BlogPost>("/posts", formData);
   return response.data;
+}
+
+interface UpdateBlogPostValues {
+  slug: string;
+  title: string;
+  summary: string;
+  body: string;
+  featuredImage?: File;
+}
+
+export async function updateBlogPost(
+  blogPostId: string,
+  input: UpdateBlogPostValues
+) {
+  const formData = new FormData();
+  Object.entries(input).forEach(([key, value]) => {
+    if (value !== undefined) formData.append(key, value);
+  });
+  await api.patch("/posts/" + blogPostId, formData);
+}
+
+export async function deleteBlogPost(blogPostId: string) {
+  await api.delete("/posts/" + blogPostId);
 }
