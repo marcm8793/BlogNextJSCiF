@@ -15,6 +15,7 @@ import {
   usernameSchema,
 } from "@/utils/validation";
 import { yupResolver } from "@hookform/resolvers/yup";
+import SocialSignInSection from "./SocialSignInSection";
 
 const validationSchema = yup.object({
   username: usernameSchema.required("Required"),
@@ -97,6 +98,8 @@ export default function SignUpModal({
             Sign Up
           </LoadingButton>
         </Form>
+        <hr />
+        <SocialSignInSection />
         <div className="d-flex align-items-center gap-1 justify-content-center mt-1">
           Already have an account?
           <Button variant="link" onClick={onLoginInsteadClicked}>

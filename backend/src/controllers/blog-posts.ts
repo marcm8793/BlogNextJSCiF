@@ -12,6 +12,7 @@ import {
   UpdateBlogPostParams,
 } from "../validation/blog-posts";
 import fs from "fs";
+import axios from "axios";
 
 export const getBlogPosts: RequestHandler<
   unknown,
@@ -182,6 +183,11 @@ export const updateBlogPost: RequestHandler<
 
     await postToEdit.save();
 
+    await axios.get(
+      env.WEBSITE_URL +
+        `/api/revalidate-post/${slug}?secret=${env.POST_REVALIDATION_KEY}`
+    );
+
     res.sendStatus(200);
   } catch (error) {
     next(error);
@@ -218,6 +224,11 @@ export const deleteBlogPost: RequestHandler<
     }
 
     await postToDelete.deleteOne();
+
+    await axios.get(
+      env.WEBSITE_URL +
+        `/api/revalidate-post/${postToDelete.slug}?secret=${env.POST_REVALIDATION_KEY}`
+    );
 
     res.sendStatus(204);
   } catch (error) {

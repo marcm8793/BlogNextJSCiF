@@ -1,10 +1,12 @@
 import express from "express";
-import * as UsersController from "../controllers/users";
 import passport from "passport";
+import * as UsersController from "../controllers/users";
+import { profilePicUpload } from "../middlewares/image-upload";
 import requiresAuth from "../middlewares/requiresAuth";
 import validateRequestSchema from "../middlewares/validateRequestSchema";
 import { signUpSchema, updateUserSchema } from "../validation/users";
-import { profilePicUpload } from "../middlewares/image-upload";
+import env from "../env";
+import setSessionReturnTo from "../middlewares/SetSessionReturnTo";
 
 const router = express.Router();
 
@@ -20,6 +22,34 @@ router.post(
 
 router.post("/login", passport.authenticate("local"), (req, res) =>
   res.status(200).json(req.user)
+);
+
+router.get(
+  "/login/google",
+  setSessionReturnTo,
+  passport.authenticate("google")
+);
+
+router.get(
+  "/login/github",
+  setSessionReturnTo,
+  passport.authenticate("github")
+);
+
+router.get(
+  "/oauth2/redirect/google",
+  passport.authenticate("google", {
+    successReturnToOrRedirect: env.WEBSITE_URL,
+    keepSessionInfo: true,
+  })
+);
+
+router.get(
+  "/oauth2/redirect/github",
+  passport.authenticate("github", {
+    successReturnToOrRedirect: env.WEBSITE_URL,
+    keepSessionInfo: true,
+  })
 );
 
 router.post("/logout", UsersController.logOut);
