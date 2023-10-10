@@ -12,7 +12,7 @@ export default function LoadingButton({
   ...props
 }: LoadingButtonProps & ButtonProps) {
   return (
-    <Button {...props}>
+    <Button {...props} disabled={isLoading || props.disabled}>
       {isLoading && (
         <>
           <Spinner

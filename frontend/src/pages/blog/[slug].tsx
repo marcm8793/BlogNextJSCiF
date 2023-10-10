@@ -10,6 +10,9 @@ import { NotFoundError } from "@/network/http-error";
 import useAuthenticatedUser from "@/hooks/useAuthenticatedUser";
 import { FiEdit } from "react-icons/fi";
 import useSWR from "swr";
+import BlogCommentSection from "@/components/comments/BlogCommentSection";
+import Markdown from "@/components/Markdown";
+import UserProfileLink from "@/components/UserProfileLink";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const slugs = await BlogApi.getAllBlogPostSlugs();
@@ -54,6 +57,7 @@ export default function BlogPostPage({ fallbackPost }: BlogPostPageProps) {
   );
 
   const {
+    _id,
     slug,
     title,
     summary,
@@ -78,6 +82,7 @@ export default function BlogPostPage({ fallbackPost }: BlogPostPageProps) {
       <Head>
         <title>{`${title} - Flow Blog`}</title>
         <meta name="description" content={summary} />
+        <meta property="og:image" key="og:image" content={featuredImageUrl} />
       </Head>
 
       <div className={styles.container}>
@@ -99,6 +104,10 @@ export default function BlogPostPage({ fallbackPost }: BlogPostPageProps) {
           <div className="d-flex flex-column align-items-center">
             <h1 className="text-center mb-3">{title}</h1>
             <p className="text-center mb-3 h5">{summary}</p>
+            <p className="d-flex gap-2 align-items-center">
+              posted by
+              <UserProfileLink user={author} />
+            </p>
             <span className="text-muted">{createdUpdatedText}</span>
             <div className={styles.featuredImageWrapper}>
               <Image
@@ -111,8 +120,10 @@ export default function BlogPostPage({ fallbackPost }: BlogPostPageProps) {
               />
             </div>
           </div>
-          <div>{body}</div>
+          <Markdown>{body}</Markdown>
         </article>
+        <hr />
+        <BlogCommentSection blogPostId={_id} />
       </div>
     </>
   );

@@ -1,6 +1,8 @@
 import { SessionOptions } from "express-session";
 import env from "../env";
 import MongoStore from "connect-mongo";
+import crypto from "crypto";
+import redisClient from "./redisClient";
 
 const sessionConfig: SessionOptions = {
   secret: env.SESSION_SECRET,
@@ -13,6 +15,18 @@ const sessionConfig: SessionOptions = {
   store: MongoStore.create({
     mongoUrl: env.MONGO_CONNECTION_STRING,
   }),
+  //store: new RedisStore({
+  //client: redisClient,
+  //}),
+  genid(req) {
+    const userId = req.user?._id;
+    const randomId = crypto.randomUUID();
+    if (userId) {
+      return `${userId}-${randomId}`;
+    } else {
+      return randomId;
+    }
+  },
 };
 
 export default sessionConfig;
